@@ -5,25 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Python AR Challenge: Make a Sentence</title>
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;800&family=Fira+Code:wght@500&display=swap" rel="stylesheet">
+    
+    <!-- MediaPipe Hands -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    
+    <!-- Tone.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" crossorigin="anonymous"></script>
 
+    <!-- SheetJS (สำหรับจัดการ Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Kanit', sans-serif; background-color: #0b0f19; user-select: none; -webkit-user-select: none; }
-        #webcam-video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; transform: scaleX(-1); z-index: 1; opacity: 0.6; display: none; }
-        #bg-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at 50% 50%, rgba(13, 25, 48, 0.6) 0%, rgba(5, 9, 20, 0.95) 100%); z-index: 2; pointer-events: none; }
-        #bg-overlay::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px); background-size: 40px 40px; z-index: -1; }
-        #game-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; touch-action: none; }
-        .html-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(5, 9, 20, 0.8); backdrop-filter: blur(16px); transition: opacity 0.5s ease; }
-        .glass-card { background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(15, 23, 42, 0.6) 100%); backdrop-filter: blur(20px); border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.1); }
+        body {
+            margin: 0; overflow: hidden;
+            font-family: 'Kanit', sans-serif;
+            background-color: #0b0f19;
+            user-select: none; -webkit-user-select: none;
+        }
+
+        #webcam-video {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            object-fit: cover; transform: scaleX(-1);
+            z-index: 1; opacity: 0.6; display: none;
+        }
+
+        #bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at 50% 50%, rgba(13, 25, 48, 0.6) 0%, rgba(5, 9, 20, 0.95) 100%);
+            z-index: 2; pointer-events: none;
+        }
+
+        #bg-overlay::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px; z-index: -1;
+        }
+
+        #game-canvas {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 10; touch-action: none; 
+        }
+
+        .html-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 20; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(5, 9, 20, 0.8); backdrop-filter: blur(16px);
+            transition: opacity 0.5s ease;
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(15, 23, 42, 0.6) 100%);
+            backdrop-filter: blur(20px); border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.1);
+        }
+
         .hidden-screen { opacity: 0; pointer-events: none; }
         .hide-cursor { cursor: none !important; }
-        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; } ::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.6); border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: rgba(56,189,248,1); }
-        .lb-tab-active { background-color: #2563eb; color: white; }
-        .lb-tab-inactive { background-color: transparent; color: #9ca3af; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.6); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(56,189,248,1); }
     </style>
 </head>
 <body>
@@ -34,11 +84,17 @@
 
     <!-- Start Screen -->
     <div id="start-screen" class="html-screen">
-        <div class="glass-card rounded-3xl p-10 text-center max-w-3xl mx-4 relative overflow-hidden">
+        <div class="glass-card rounded-3xl p-10 text-center max-w-3xl mx-4 relative overflow-hidden mt-4">
             <div class="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-gradient-to-r from-blue-500/10 via-yellow-400/5 to-purple-500/10 animate-[spin_12s_linear_infinite] z-[-1]"></div>
-            <div class="inline-block bg-blue-500/20 px-4 py-1 rounded-full text-blue-300 text-sm font-bold tracking-widest mb-4 border border-blue-500/30">EDUCATION AR GAME</div>
-            <h1 class="text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-500 mb-2 drop-shadow-[0_0_20px_rgba(56,189,248,0.4)]">PYTHON <span class="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">AR</span></h1>
-            <h2 class="text-2xl font-semibold text-gray-300 mb-6 tracking-wider font-[Fira Code]">Make a Sentence</h2>
+            
+            <div class="inline-block bg-blue-500/20 px-4 py-1 rounded-full text-blue-300 text-sm font-bold tracking-widest mb-4 border border-blue-500/30">
+                EDUCATION AR GAME
+            </div>
+            
+            <h1 class="text-6xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-500 mb-2 drop-shadow-[0_0_20px_rgba(56,189,248,0.4)]">
+                PYTHON <span class="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">AR</span>
+            </h1>
+            <h2 class="text-xl md:text-2xl font-semibold text-gray-300 mb-6 tracking-wider font-[Fira Code]">Make a Sentence</h2>
 
             <div class="mb-8">
                 <label class="block text-cyan-300 font-bold mb-2 text-lg">กรอกชื่อของคุณก่อนเริ่มเกม</label>
@@ -54,41 +110,78 @@
                 </button>
             </div>
             
-            <div class="flex justify-center gap-4 mt-6">
-                <button id="leaderboard-btn" class="text-yellow-400 hover:text-yellow-300 transition-colors underline text-sm flex items-center gap-1">🏆 ตารางคะแนน (Leaderboard)</button>
+            <div class="flex justify-center items-center gap-4 mt-6">
+                <button id="leaderboard-btn" class="text-yellow-400 hover:text-yellow-300 transition-colors underline text-sm flex items-center gap-1">
+                    🏆 ตารางคะแนน (Leaderboard)
+                </button>
                 <span class="text-gray-600">|</span>
-                <button id="admin-entry-btn" class="text-gray-500 hover:text-cyan-400 transition-colors underline text-sm flex items-center gap-1">⚙️ จัดการคำถาม (Admin)</button>
+                <button id="admin-entry-btn" class="text-gray-500 hover:text-cyan-400 transition-colors underline text-sm flex items-center gap-1">
+                    ⚙️ จัดการคำถาม (Admin)
+                </button>
             </div>
+            
             <div id="loading-text" class="text-cyan-300 mt-6 text-sm font-medium hidden bg-slate-900/80 px-4 py-2 rounded-lg inline-block border border-cyan-500/30"></div>
+        </div>
+    </div>
+
+    <!-- Custom Message Modal -->
+    <div id="msg-modal" class="html-screen hidden-screen" style="z-index: 100;">
+        <div class="glass-card rounded-2xl p-6 max-w-sm text-center border border-cyan-500/50">
+            <h3 id="msg-title" class="text-xl font-bold text-white mb-2">แจ้งเตือน</h3>
+            <p id="msg-text" class="text-gray-300 mb-6"></p>
+            <button id="msg-ok-btn" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded-lg font-bold w-full">ตกลง</button>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-modal" class="html-screen hidden-screen" style="z-index: 100;">
+        <div class="glass-card rounded-2xl p-6 max-w-sm text-center border border-yellow-500/50">
+            <h3 class="text-xl font-bold text-yellow-400 mb-2">ยืนยันการดำเนินการ</h3>
+            <p id="confirm-text" class="text-gray-300 mb-6"></p>
+            <div class="flex justify-center gap-3">
+                <button id="confirm-yes-btn" class="bg-red-500 hover:bg-red-400 text-white px-6 py-2 rounded-lg font-bold w-full">ยืนยัน</button>
+                <button id="confirm-no-btn" class="bg-slate-600 hover:bg-slate-500 text-white px-6 py-2 rounded-lg font-bold w-full">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="html-screen hidden-screen" style="z-index: 90;">
+        <div class="glass-card rounded-2xl p-8 max-w-sm text-center border border-yellow-500/50">
+            <h3 class="text-2xl font-bold text-yellow-400 mb-2">🔒 เข้าระบบ Admin</h3>
+            <p class="text-gray-300 mb-6 text-sm">กรุณาระบุรหัสผ่าน (Hint: 1234)</p>
+            <input type="password" id="admin-password-input" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white text-center text-2xl tracking-[0.5em] mb-4 focus:outline-none focus:border-yellow-400">
+            <p id="password-error" class="text-red-400 text-sm mb-4 hidden">❌ รหัสผ่านไม่ถูกต้อง</p>
+            <div class="flex justify-center gap-3">
+                <button id="submit-password-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold w-full">ตกลง</button>
+                <button id="cancel-password-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold">ปิด</button>
+            </div>
         </div>
     </div>
 
     <!-- Leaderboard Screen -->
     <div id="leaderboard-screen" class="html-screen hidden-screen">
-        <div class="glass-card rounded-3xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4 shadow-2xl relative border-yellow-500/30">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-gray-600 pb-4">
-                <h2 class="text-3xl font-bold text-yellow-400 mb-4 md:mb-0">🏆 ตารางผู้นำ (Top 10)</h2>
-                
-                <!-- Tab AR / Mouse -->
-                <div class="flex bg-slate-900 rounded-lg p-1 border border-slate-700 mb-4 md:mb-0">
-                    <button id="tab-ar-btn" class="px-6 py-2 rounded-md lb-tab-active font-bold transition-colors">📸 โหมด AR</button>
-                    <button id="tab-mouse-btn" class="px-6 py-2 rounded-md lb-tab-inactive hover:text-white font-bold transition-colors">🖱️ โหมดเมาส์</button>
-                </div>
-
+        <div class="glass-card rounded-3xl p-6 md:p-8 w-full max-w-3xl max-h-[90vh] overflow-hidden mx-4 shadow-2xl relative border-yellow-500/30 flex flex-col">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 border-b border-gray-600 pb-4">
+                <h2 class="text-3xl font-bold text-yellow-400 mb-4 sm:mb-0">🏆 ตารางผู้นำ</h2>
                 <button id="close-leaderboard-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg font-bold transition-colors">ย้อนกลับ</button>
             </div>
             
+            <!-- Mode Tabs -->
+            <div class="flex gap-2 mb-4 justify-center">
+                <button id="tab-ar-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex-1 max-w-[200px] border border-blue-400 transition-colors">📸 โหมด AR</button>
+                <button id="tab-mouse-btn" class="bg-slate-800 text-gray-400 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold flex-1 max-w-[200px] transition-colors">🖱️ โหมดเมาส์</button>
+            </div>
+
             <div id="leaderboard-loading" class="text-center text-cyan-300 py-10 animate-pulse">กำลังดึงข้อมูล...</div>
-            
-            <div id="leaderboard-content" class="hidden">
-                <table class="w-full text-left border-collapse">
+            <div id="leaderboard-content" class="hidden overflow-y-auto flex-1 pr-2">
+                <table class="w-full text-left border-collapse text-sm md:text-base">
                     <thead>
-                        <tr class="text-gray-400 border-b border-slate-700 bg-slate-800/50">
-                            <th class="py-3 pl-4 rounded-tl-lg">อันดับ</th>
+                        <tr class="text-gray-400 border-b border-slate-700">
+                            <th class="py-3 pl-2">อันดับ</th>
                             <th class="py-3">ชื่อผู้เล่น</th>
                             <th class="py-3 text-right">คะแนน</th>
-                            <th class="py-3 text-center">⏱️ เวลา (วิ)</th>
-                            <th class="py-3 pl-4 hidden md:table-cell rounded-tr-lg">ด่านล่าสุด</th>
+                            <th class="py-3 text-right pr-2">เวลา(วิ)</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-tbody" class="text-gray-200"></tbody>
@@ -97,67 +190,110 @@
         </div>
     </div>
 
-    <!-- Other Modals (Message, Confirm, Admin Password) -->
-    <div id="msg-modal" class="html-screen hidden-screen" style="z-index: 100;">
-        <div class="glass-card rounded-2xl p-6 max-w-sm text-center"><h3 id="msg-title" class="text-xl font-bold text-white mb-2">แจ้งเตือน</h3><p id="msg-text" class="text-gray-300 mb-6"></p><button id="msg-ok-btn" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded-lg font-bold">ตกลง</button></div>
-    </div>
-    <div id="confirm-modal" class="html-screen hidden-screen" style="z-index: 100;">
-        <div class="glass-card rounded-2xl p-6 max-w-sm text-center"><h3 class="text-xl font-bold text-yellow-400 mb-2">ยืนยันการดำเนินการ</h3><p id="confirm-text" class="text-gray-300 mb-6"></p><div class="flex justify-center gap-3"><button id="confirm-yes-btn" class="bg-red-500 hover:bg-red-400 text-white px-6 py-2 rounded-lg font-bold">ใช่, ดำเนินการ</button><button id="confirm-no-btn" class="bg-slate-600 hover:bg-slate-500 text-white px-6 py-2 rounded-lg font-bold">ยกเลิก</button></div></div>
-    </div>
-    <div id="password-modal" class="html-screen hidden-screen" style="z-index: 90;">
-        <div class="glass-card rounded-2xl p-8 max-w-sm text-center border-yellow-500/30"><h3 class="text-2xl font-bold text-yellow-400 mb-2">🔒 ยืนยันตัวตน</h3><p class="text-gray-300 mb-6 text-sm">กรุณาระบุรหัสผ่านเพื่อเข้าสู่ระบบแอดมิน</p><input type="password" id="admin-password-input" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white text-center text-2xl tracking-[0.5em] mb-4 focus:outline-none focus:border-yellow-400" placeholder="••••"><p id="password-error" class="text-red-400 text-sm mb-4 hidden">❌ รหัสผ่านไม่ถูกต้อง</p><div class="flex justify-center gap-3"><button id="submit-password-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold w-full">เข้าสู่ระบบ</button><button id="cancel-password-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold">ปิด</button></div></div>
-    </div>
-
     <!-- Admin Screen -->
     <div id="admin-screen" class="html-screen hidden-screen">
-        <div class="glass-card rounded-3xl p-8 w-full max-w-5xl max-h-[90vh] overflow-y-auto mx-4 shadow-2xl relative">
+        <div class="glass-card rounded-3xl p-6 md:p-8 w-full max-w-6xl max-h-[95vh] overflow-y-auto mx-4 shadow-2xl relative">
             <div class="flex flex-col sm:flex-row justify-between items-center mb-8 border-b border-gray-600 pb-4">
                 <h2 class="text-3xl font-bold text-cyan-400 mb-4 sm:mb-0">⚙️ ระบบจัดการคำถาม (Admin)</h2>
-                <button id="close-admin-btn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold transition-colors">✖️ ปิด / กลับหน้าหลัก</button>
+                <button id="close-admin-btn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold transition-colors">✖️ ปิดระบบแอดมิน</button>
             </div>
+            
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column -->
                 <div>
-                    <h3 class="text-xl font-semibold text-white mb-4 flex justify-between items-center">ด่านทั้งหมด <span id="level-count" class="bg-cyan-500/30 text-cyan-300 text-sm py-1 px-3 rounded-full">0 ด่าน</span></h3>
+                    <h3 class="text-xl font-semibold text-white mb-4 flex justify-between items-center">
+                        ด่านทั้งหมด <span id="level-count" class="bg-cyan-500/30 text-cyan-300 text-sm py-1 px-3 rounded-full">0 ด่าน</span>
+                    </h3>
                     <div id="admin-level-list" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2"></div>
-                    <button id="reset-default-btn" class="mt-6 bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-lg text-sm w-full transition-colors border border-slate-500">🔄 คืนค่าคำถามเริ่มต้น</button>
+                    <button id="reset-default-btn" class="mt-6 bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-lg text-sm w-full transition-colors border border-slate-500">🔄 คืนค่าคำถามเริ่มต้น (Reset All)</button>
                 </div>
-                <div class="bg-slate-900/60 p-6 rounded-2xl border border-slate-700">
-                    <h3 class="text-xl font-semibold text-emerald-400 mb-4">➕ เพิ่มข้อคำถาม</h3>
-                    <form id="add-level-form" class="space-y-4">
-                        <div><label class="block text-sm text-gray-300 mb-1">หมวดหมู่ / ด่าน</label><input type="text" id="add-title" list="admin-category-list" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"><datalist id="admin-category-list"></datalist></div>
-                        <div><label class="block text-sm text-gray-300 mb-1">คำสั่ง (โจทย์)</label><input type="text" id="add-inst" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"></div>
-                        <div><label class="block text-sm text-gray-300 mb-1">คำศัพท์ที่ให้เลือก (คั่นด้วยลูกน้ำ ,)</label><input type="text" id="add-words" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white" placeholder="เช่น def, hello, (, )"></div>
-                        <div><label class="block text-sm text-gray-300 mb-1">เฉลยที่ถูกต้อง (คั่นด้วยลูกน้ำ ,)</label><input type="text" id="add-sol" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"></div>
-                        <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 text-white font-bold py-3 rounded-lg mt-4 shadow-lg">💾 บันทึกด่านใหม่</button>
-                    </form>
+                
+                <!-- Right Column -->
+                <div class="space-y-6">
+                    <!-- Excel Area -->
+                    <div class="bg-slate-900/60 p-6 rounded-2xl border border-blue-500/50 shadow-lg shadow-blue-500/10">
+                        <h3 class="text-xl font-semibold text-blue-400 mb-4">📂 จัดการคำถามด้วยไฟล์ Excel</h3>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button id="download-template-btn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-300 px-4 py-3 rounded-lg border border-blue-500/30 transition-colors text-sm flex items-center justify-center gap-2">
+                                📥 โหลดไฟล์ต้นแบบ
+                            </button>
+                            <label class="flex-1 bg-emerald-600/50 hover:bg-emerald-500 text-emerald-100 px-4 py-3 rounded-lg border border-emerald-500/50 transition-colors text-sm flex items-center justify-center gap-2 cursor-pointer">
+                                📤 อัปโหลด Excel
+                                <input type="file" id="upload-excel-input" accept=".xlsx, .xls, .csv" class="hidden">
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-3 text-center">อัปโหลดไฟล์ที่แก้เสร็จแล้วเพื่อเพิ่มโจทย์ทีละมากๆ (SheetJS)</p>
+                    </div>
+
+                    <!-- Manual Form Area -->
+                    <div class="bg-slate-900/60 p-6 rounded-2xl border border-slate-700">
+                        <h3 class="text-xl font-semibold text-emerald-400 mb-4">➕ เพิ่มข้อคำถาม (พิมพ์เอง)</h3>
+                        <form id="add-level-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-300 mb-1">หมวดหมู่ / ด่าน</label>
+                                <input type="text" id="add-title" list="admin-category-list" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-gray-500">
+                                <datalist id="admin-category-list"></datalist>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-300 mb-1">คำสั่ง (โจทย์)</label>
+                                <input type="text" id="add-inst" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-300 mb-1">คำศัพท์ที่ให้เลือก (คั่นด้วยลูกน้ำ ,)</label>
+                                <input type="text" id="add-words" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white" placeholder="เช่น x, =, 10, y">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-300 mb-1">เฉลยที่ถูกต้อง (คั่นด้วยลูกน้ำ ,)</label>
+                                <input type="text" id="add-sol" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white" placeholder="เช่น x, =, 10">
+                            </div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 text-white font-bold py-3 rounded-lg mt-4 shadow-lg">💾 บันทึกคำถามใหม่</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
 <script>
+    
     // 👉👉 อัปเดต URL ของ Web App ตรงนี้ 👈👈
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymVqsGVusBms6o5Kmz-oS6Z8IHEtdJQT8zpdl6HU8QbgOBjUTujQ8SUdK3zitnbxlgzg/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyp5PfXqVk2bXQZ2WcVJ_z6HrjcSIxDVTlfEbOaiZ7tZQkSElUegICkX87OIfFyQd0Mhg/exec";
 
+    // Utility Modals
     function showMsg(title, text) {
-        document.getElementById('msg-title').innerText = title; document.getElementById('msg-text').innerHTML = text;
-        const modal = document.getElementById('msg-modal'); modal.classList.remove('hidden-screen');
+        document.getElementById('msg-title').innerText = title;
+        document.getElementById('msg-text').innerHTML = text;
+        const modal = document.getElementById('msg-modal');
+        modal.classList.remove('hidden-screen');
         document.getElementById('msg-ok-btn').onclick = () => modal.classList.add('hidden-screen');
     }
+
     function showConfirm(text, onYes) {
-        document.getElementById('confirm-text').innerHTML = text; const modal = document.getElementById('confirm-modal'); modal.classList.remove('hidden-screen');
+        document.getElementById('confirm-text').innerHTML = text;
+        const modal = document.getElementById('confirm-modal');
+        modal.classList.remove('hidden-screen');
         document.getElementById('confirm-yes-btn').onclick = () => { modal.classList.add('hidden-screen'); onYes(); };
         document.getElementById('confirm-no-btn').onclick = () => modal.classList.add('hidden-screen');
     }
 
+    // Tone.js Audio Manager
     const audioManager = {
         synth: null, bgm: null, isMuted: false,
         async init() {
-            if (this.synth) return; await Tone.start();
-            this.synth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" }, envelope: { attack: 0.05, decay: 0.1, sustain: 0.2, release: 1 } }).toDestination();
+            if (this.synth) return;
+            await Tone.start();
+            this.synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "triangle" },
+                envelope: { attack: 0.05, decay: 0.1, sustain: 0.2, release: 1 }
+            }).toDestination();
             this.synth.volume.value = -12;
-            this.bgm = new Tone.Pattern((time, note) => { if(!this.isMuted) this.synth.triggerAttackRelease(note, "8n", time, 0.05); }, ["C4", "E4", "G4", "B4"], "upDown");
-            this.bgm.interval = "8n"; this.bgm.start(0); Tone.Transport.start();
+
+            this.bgm = new Tone.Pattern((time, note) => {
+                if(!this.isMuted) this.synth.triggerAttackRelease(note, "8n", time, 0.05);
+            }, ["C4", "E4", "G4", "B4"], "upDown");
+            this.bgm.interval = "8n";
+            this.bgm.start(0);
+            Tone.Transport.start();
         },
         grab() { if(!this.isMuted && this.synth) this.synth.triggerAttackRelease("C6", "32n"); },
         drop() { if(!this.isMuted && this.synth) this.synth.triggerAttackRelease("G5", "32n"); },
@@ -166,109 +302,169 @@
     };
 
     const defaultLevelData = [
-        { title: "ด่านที่ 1: ตัวแปร (Variables)", cleared: false, questions: [ { instruction: "สร้างตัวแปร x ให้เก็บค่า 10", words: [ { text: "10", emoji: "🔟" }, { text: "x", emoji: "📦" }, { text: "=", emoji: "🟰" } ], solution: ["x", "=", "10"] } ] },
-        { title: "ด่านที่ 2: ชนิดข้อมูล (Data Types)", cleared: false, questions: [ { instruction: "แปลงข้อความ '5' ให้เป็นตัวเลขจำนวนเต็ม", words: [ { text: "'5'", emoji: "💬" }, { text: ")", emoji: "ปิด" }, { text: "int", emoji: "🔢" }, { text: "(", emoji: "เปิด" } ], solution: ["int", "(", "'5'", ")"] } ] }
+        { title: "ด่านที่ 1: ตัวแปร (Variables)", cleared: false, questions: [ { instruction: "สร้างตัวแปร x ให้เก็บค่า 10", words: [ { text: "10", emoji: "🔟" }, { text: "x", emoji: "📦" }, { text: "=", emoji: "🟰" } ], solution: ["x", "=", "10"] }, { instruction: "สร้างตัวแปร name เก็บคำว่า 'Python'", words: [ { text: "'Python'", emoji: "🐍" }, { text: "name", emoji: "🏷️" }, { text: "=", emoji: "🟰" } ], solution: ["name", "=", "'Python'"] } ] },
+        { title: "ด่านที่ 2: ชนิดข้อมูล (Data Types)", cleared: false, questions: [ { instruction: "แปลงข้อความ '5' ให้เป็นตัวเลขจำนวนเต็ม", words: [ { text: "'5'", emoji: "💬" }, { text: ")", emoji: "ปิด" }, { text: "int", emoji: "🔢" }, { text: "(", emoji: "เปิด" } ], solution: ["int", "(", "'5'", ")"] } ] },
+        { title: "ด่านที่ 3: เงื่อนไข (If-Else)", cleared: false, questions: [ { instruction: "ตรวจสอบว่าคะแนน (score) มากกว่า 50 หรือไม่", words: [ { text: ">", emoji: "📈" }, { text: "if", emoji: "🤔" }, { text: ":", emoji: "จุด" }, { text: "50", emoji: "💯" }, { text: "score", emoji: "⭐" } ], solution: ["if", "score", ">", "50", ":"] } ] },
     ];
 
-    let levelData = []; let playerName = ""; 
+    let levelData = [];
+    let playerName = ""; 
+    let currentModeStr = "Mouse"; // "AR" หรือ "Mouse"
+    let leaderboardDataFull = { ar: [], mouse: [] };
     const loadingUI = document.getElementById('loading-text');
 
     function fetchLevelData() {
         if (APPS_SCRIPT_URL) {
-            loadingUI.classList.remove('hidden'); loadingUI.classList.add('block'); loadingUI.innerText = "⏳ กำลังซิงค์ข้อมูลจาก Server...";
-            fetch(APPS_SCRIPT_URL + "?action=getLevels").then(res => { if (!res.ok) throw new Error("Network Error"); return res.json(); })
-            .then(data => { levelData = (data && data.length > 0) ? data : JSON.parse(JSON.stringify(defaultLevelData)); loadingUI.classList.remove('block'); loadingUI.classList.add('hidden'); })
-            .catch(err => { levelData = JSON.parse(localStorage.getItem('pythonAR_levels')) || JSON.parse(JSON.stringify(defaultLevelData)); loadingUI.classList.remove('block'); loadingUI.classList.add('hidden'); });
-        } else { levelData = JSON.parse(localStorage.getItem('pythonAR_levels')) || JSON.parse(JSON.stringify(defaultLevelData)); }
-    }
-
-    function saveLevelData() { 
-        if (APPS_SCRIPT_URL) fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'saveLevels', data: levelData }) }).catch(err => console.warn(err));
-        localStorage.setItem('pythonAR_levels', JSON.stringify(levelData)); 
-    }
-
-    function savePlayerProgress(score, levelName, timeSec, modeStr) {
-        if (APPS_SCRIPT_URL && playerName) {
-            fetch(APPS_SCRIPT_URL, {
-                method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ action: 'saveProgress', name: playerName, score: score, level: levelName, time: timeSec, mode: modeStr })
-            }).catch(e => console.warn(e));
+            loadingUI.classList.remove('hidden'); loadingUI.classList.add('block');
+            loadingUI.innerText = "⏳ กำลังซิงค์ข้อมูลจาก Server...";
+            fetch(APPS_SCRIPT_URL + "?action=getLevels")
+                .then(res => { if (!res.ok) throw new Error("Network Error"); return res.json(); })
+                .then(data => {
+                    levelData = (data && data.length > 0) ? data : JSON.parse(JSON.stringify(defaultLevelData));
+                    loadingUI.classList.remove('block'); loadingUI.classList.add('hidden');
+                }).catch(err => {
+                    console.warn("Fetch failed, using local storage:", err);
+                    levelData = JSON.parse(localStorage.getItem('pythonAR_levels')) || JSON.parse(JSON.stringify(defaultLevelData));
+                    loadingUI.classList.remove('block'); loadingUI.classList.add('hidden');
+                });
+        } else {
+            levelData = JSON.parse(localStorage.getItem('pythonAR_levels')) || JSON.parse(JSON.stringify(defaultLevelData));
         }
     }
 
-    let currentLbMode = 'AR';
-    let lbDataCache = { ar: [], mouse: [] };
+    function saveLevelData() { 
+        if (APPS_SCRIPT_URL) {
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+                body: JSON.stringify({ action: 'saveLevels', data: levelData })
+            }).catch(err => console.warn("Save API failed:", err));
+        }
+        localStorage.setItem('pythonAR_levels', JSON.stringify(levelData)); 
+    }
 
-    document.getElementById('tab-ar-btn').addEventListener('click', () => { 
-        currentLbMode = 'AR'; updateLbTabs(); renderLeaderboardTable(); 
-    });
-    document.getElementById('tab-mouse-btn').addEventListener('click', () => { 
-        currentLbMode = 'Mouse'; updateLbTabs(); renderLeaderboardTable(); 
-    });
-
-    function updateLbTabs() {
-        const arBtn = document.getElementById('tab-ar-btn'), mouseBtn = document.getElementById('tab-mouse-btn');
-        if(currentLbMode === 'AR') {
-            arBtn.className = "px-6 py-2 rounded-md lb-tab-active font-bold transition-colors";
-            mouseBtn.className = "px-6 py-2 rounded-md lb-tab-inactive hover:text-white font-bold transition-colors";
-        } else {
-            mouseBtn.className = "px-6 py-2 rounded-md lb-tab-active font-bold transition-colors";
-            arBtn.className = "px-6 py-2 rounded-md lb-tab-inactive hover:text-white font-bold transition-colors";
+    // บันทึกคะแนนเข้า Google Sheets พร้อมแนบโหมด และ เวลาที่ใช้
+    function savePlayerProgress(score, levelName, timeTaken) {
+        if (APPS_SCRIPT_URL && playerName) {
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ 
+                    action: 'saveProgress', 
+                    name: playerName, 
+                    score: score, 
+                    level: levelName,
+                    time: parseFloat(timeTaken.toFixed(2)),
+                    mode: currentModeStr
+                })
+            }).then(() => console.log('✅ บันทึกคะแนน+เวลาสำเร็จ'))
+              .catch(e => console.warn("Save progress failed:", e));
         }
     }
 
     function fetchLeaderboard() {
-        if(!APPS_SCRIPT_URL) { showMsg('ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Google Sheets'); return; }
-        document.getElementById('leaderboard-loading').classList.remove('hidden'); document.getElementById('leaderboard-content').classList.add('hidden');
+        if(!APPS_SCRIPT_URL) { showMsg('ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Google Sheets API'); return; }
+        document.getElementById('leaderboard-loading').classList.remove('hidden');
+        document.getElementById('leaderboard-content').classList.add('hidden');
         
-        fetch(APPS_SCRIPT_URL + "?action=getLeaderboard").then(res => res.json()).then(data => {
-            lbDataCache = data;
-            renderLeaderboardTable();
-            document.getElementById('leaderboard-loading').classList.add('hidden'); document.getElementById('leaderboard-content').classList.remove('hidden');
-        }).catch(e => { document.getElementById('leaderboard-loading').innerText = 'ไม่สามารถดึงข้อมูลได้ โปรดลองอีกครั้งในภายหลัง'; });
-    }
-
-    function renderLeaderboardTable() {
-        const tbody = document.getElementById('leaderboard-tbody'); tbody.innerHTML = '';
-        const data = (currentLbMode === 'AR') ? lbDataCache.ar : lbDataCache.mouse;
-
-        if(!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-gray-400 bg-slate-800/20">ยังไม่มีผู้เล่นในโหมด ${currentLbMode}</td></tr>`;
-        } else {
-            data.forEach((row, i) => {
-                let rankIcon = (i===0)?'🥇':(i===1)?'🥈':(i===2)?'🥉':(i+1);
-                let timeText = (row.time >= 99999) ? '-' : row.time.toFixed(1);
-                let tr = document.createElement('tr');
-                tr.className = "border-b border-slate-700/50 hover:bg-slate-800/80 transition-colors";
-                tr.innerHTML = `
-                    <td class="py-3 pl-4 font-bold text-lg ${i<3?'text-yellow-400':'text-gray-400'}">${rankIcon}</td>
-                    <td class="py-3 font-semibold text-cyan-300">${row.name}</td>
-                    <td class="py-3 text-right font-bold text-emerald-400">${row.score}</td>
-                    <td class="py-3 text-center font-bold text-pink-400">${timeText}</td>
-                    <td class="py-3 pl-4 text-sm text-gray-500 hidden md:table-cell">${row.level}</td>
-                `;
-                tbody.appendChild(tr);
+        fetch(APPS_SCRIPT_URL + "?action=getLeaderboard")
+            .then(res => { if (!res.ok) throw new Error("Network Error"); return res.json(); })
+            .then(data => {
+                leaderboardDataFull = data;
+                renderLeaderboardTable('AR'); // Default tab
+                document.getElementById('leaderboard-loading').classList.add('hidden');
+                document.getElementById('leaderboard-content').classList.remove('hidden');
+            }).catch(e => {
+                document.getElementById('leaderboard-loading').innerText = '❌ ไม่สามารถดึงข้อมูลได้ โปรดตรวจสอบ URL ของ Apps Script';
             });
-        }
     }
+
+    function renderLeaderboardTable(mode) {
+        // Toggle tab styles
+        const btnAR = document.getElementById('tab-ar-btn');
+        const btnMouse = document.getElementById('tab-mouse-btn');
+        if(mode === 'AR') {
+            btnAR.className = "bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex-1 max-w-[200px] border border-blue-400 transition-colors";
+            btnMouse.className = "bg-slate-800 text-gray-400 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold flex-1 max-w-[200px] transition-colors";
+        } else {
+            btnMouse.className = "bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex-1 max-w-[200px] border border-blue-400 transition-colors";
+            btnAR.className = "bg-slate-800 text-gray-400 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold flex-1 max-w-[200px] transition-colors";
+        }
+
+        const tbody = document.getElementById('leaderboard-tbody');
+        tbody.innerHTML = '';
+        
+        const dataArr = mode === 'AR' ? leaderboardDataFull.ar : leaderboardDataFull.mouse;
+        
+        if(!dataArr || dataArr.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">ยังไม่มีประวัติในโหมด ${mode}</td></tr>`;
+            return;
+        }
+
+        dataArr.forEach((row, i) => {
+            let rankIcon = (i===0)?'🥇':(i===1)?'🥈':(i===2)?'🥉':(i+1);
+            let timeFmt = (row.time && row.time < 99999) ? parseFloat(row.time).toFixed(1) + 's' : '-';
+            
+            let tr = document.createElement('tr');
+            tr.className = "border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors";
+            tr.innerHTML = `
+                <td class="py-3 pl-2 font-bold text-lg ${i<3?'text-yellow-400':'text-gray-400'}">${rankIcon}</td>
+                <td class="py-3 font-semibold text-cyan-300 truncate max-w-[100px] sm:max-w-xs">${row.name}</td>
+                <td class="py-3 text-right font-bold text-emerald-400">${row.score}</td>
+                <td class="py-3 pr-2 text-right text-sm text-yellow-200">${timeFmt}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('tab-ar-btn').addEventListener('click', () => renderLeaderboardTable('AR'));
+    document.getElementById('tab-mouse-btn').addEventListener('click', () => renderLeaderboardTable('Mouse'));
 
     fetchLevelData();
     const randomEmojis = ['📦', '🟰', '🔟', '💬', '🔢', '🤔', '💯', '⭐', '🔄', '🖐️', '🔁', '📥', '🍎', '🧺', '🧩', '🚀', '💡', '🔥', '⚙️', '💻'];
+
     const adminScreen = document.getElementById('admin-screen'), adminLevelList = document.getElementById('admin-level-list');
     
-    document.getElementById('leaderboard-btn').addEventListener('click', () => { document.getElementById('start-screen').classList.add('hidden-screen'); document.getElementById('leaderboard-screen').classList.remove('hidden-screen'); fetchLeaderboard(); });
-    document.getElementById('close-leaderboard-btn').addEventListener('click', () => { document.getElementById('leaderboard-screen').classList.add('hidden-screen'); document.getElementById('start-screen').classList.remove('hidden-screen'); });
-
-    document.getElementById('admin-entry-btn').addEventListener('click', () => { document.getElementById('password-modal').classList.remove('hidden-screen'); document.getElementById('password-error').classList.add('hidden'); document.getElementById('admin-password-input').focus(); });
-    document.getElementById('cancel-password-btn').addEventListener('click', () => { document.getElementById('password-modal').classList.add('hidden-screen'); document.getElementById('admin-password-input').value = ""; });
-    document.getElementById('submit-password-btn').addEventListener('click', () => {
-        if(document.getElementById('admin-password-input').value === "1234") {
-            document.getElementById('password-modal').classList.add('hidden-screen'); document.getElementById('start-screen').classList.add('hidden-screen'); adminScreen.classList.remove('hidden-screen'); renderAdminLevels(); document.getElementById('admin-password-input').value = "";
-        } else { document.getElementById('password-error').classList.remove('hidden'); }
+    // Leaderboard UI handlers
+    document.getElementById('leaderboard-btn').addEventListener('click', () => {
+        document.getElementById('start-screen').classList.add('hidden-screen');
+        document.getElementById('leaderboard-screen').classList.remove('hidden-screen');
+        fetchLeaderboard();
+    });
+    document.getElementById('close-leaderboard-btn').addEventListener('click', () => {
+        document.getElementById('leaderboard-screen').classList.add('hidden-screen');
+        document.getElementById('start-screen').classList.remove('hidden-screen');
     });
 
+    // Admin Password Logic
+    document.getElementById('admin-entry-btn').addEventListener('click', () => {
+        document.getElementById('password-modal').classList.remove('hidden-screen');
+        document.getElementById('password-error').classList.add('hidden');
+        document.getElementById('admin-password-input').focus();
+    });
+    document.getElementById('cancel-password-btn').addEventListener('click', () => {
+        document.getElementById('password-modal').classList.add('hidden-screen');
+        document.getElementById('admin-password-input').value = "";
+    });
+    document.getElementById('submit-password-btn').addEventListener('click', () => {
+        if(document.getElementById('admin-password-input').value === "1234") {
+            document.getElementById('password-modal').classList.add('hidden-screen');
+            document.getElementById('start-screen').classList.add('hidden-screen');
+            adminScreen.classList.remove('hidden-screen');
+            renderAdminLevels();
+            document.getElementById('admin-password-input').value = "";
+        } else {
+            document.getElementById('password-error').classList.remove('hidden');
+        }
+    });
+
+    // Admin Setup
     document.getElementById('close-admin-btn').addEventListener('click', () => { adminScreen.classList.add('hidden-screen'); document.getElementById('start-screen').classList.remove('hidden-screen'); });
-    document.getElementById('reset-default-btn').addEventListener('click', () => { showConfirm('คืนค่าเริ่มต้นทั้งหมดหรือไม่?', () => { levelData = JSON.parse(JSON.stringify(defaultLevelData)); saveLevelData(); renderAdminLevels(); }); });
+    document.getElementById('reset-default-btn').addEventListener('click', () => { 
+        showConfirm('คุณแน่ใจหรือไม่ว่าจะลบข้อมูลทั้งหมดแล้วคืนค่าเริ่มต้น?', () => {
+            levelData = JSON.parse(JSON.stringify(defaultLevelData)); saveLevelData(); renderAdminLevels();
+        });
+    });
 
     function renderAdminLevels() {
         adminLevelList.innerHTML = ''; document.getElementById('level-count').innerText = levelData.length + ' หมวดหมู่';
@@ -276,76 +472,175 @@
         levelData.forEach((level, lIdx) => {
             if (datalist) { const option = document.createElement('option'); option.value = level.title; datalist.appendChild(option); }
             const catDiv = document.createElement('div'); catDiv.className = "bg-slate-800/80 rounded-lg border border-slate-600 mb-4 overflow-hidden";
-            let html = `<div class="flex justify-between items-center p-3 bg-slate-700/50 border-b border-slate-600"><h4 class="text-cyan-300 font-bold">${level.title} <span class="text-xs text-gray-400 font-normal">(${level.questions.length} ข้อ)</span></h4><button onclick="deleteAdminCategory(${lIdx})" class="text-red-400 hover:text-red-300 text-sm underline">ลบหมวด</button></div><div class="p-3 space-y-2">`;
-            level.questions.forEach((q, qIdx) => { html += `<div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-slate-700"><div><p class="text-sm text-gray-200"><span class="text-emerald-400 font-bold">ข้อ ${qIdx + 1}:</span> ${q.instruction}</p><p class="text-xs text-gray-400 mt-1">เฉลย: ${q.solution.join(' ')}</p></div><button onclick="deleteAdminQuestion(${lIdx}, ${qIdx})" class="bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white px-2 py-1 rounded text-xs border border-red-500/50 ml-2">ลบ</button></div>`; });
+            let html = `<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-slate-700/50 border-b border-slate-600 gap-2"><h4 class="text-cyan-300 font-bold">${level.title} <span class="text-xs text-gray-400 font-normal">(${level.questions.length} ข้อ)</span></h4><button onclick="deleteAdminCategory(${lIdx})" class="text-red-400 hover:text-red-300 text-sm underline shrink-0">ลบหมวดหมู่นี้</button></div><div class="p-3 space-y-2">`;
+            level.questions.forEach((q, qIdx) => {
+                html += `<div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-slate-700 gap-2"><div class="flex-1 min-w-0"><p class="text-sm text-gray-200 truncate"><span class="text-emerald-400 font-bold">ข้อ ${qIdx + 1}:</span> ${q.instruction}</p><p class="text-xs text-gray-400 mt-1 truncate">เฉลย: ${q.solution.join(' ')}</p></div><button onclick="deleteAdminQuestion(${lIdx}, ${qIdx})" class="bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white px-2 py-1 rounded text-xs border border-red-500/50 shrink-0">ลบ</button></div>`;
+            });
             catDiv.innerHTML = html + '</div>'; adminLevelList.appendChild(catDiv);
         });
     }
-    window.deleteAdminCategory = function(lIdx) { showConfirm('ลบหมวดหมู่นี้?', () => { levelData.splice(lIdx, 1); saveLevelData(); renderAdminLevels(); }); }
-    window.deleteAdminQuestion = function(lIdx, qIdx) { showConfirm('ลบคำถามนี้?', () => { levelData[lIdx].questions.splice(qIdx, 1); if (levelData[lIdx].questions.length === 0) levelData.splice(lIdx, 1); saveLevelData(); renderAdminLevels(); }); }
+    
+    window.deleteAdminCategory = function(lIdx) { showConfirm('ต้องการลบหมวดหมู่นี้ทั้งหมดหรือไม่?', () => { levelData.splice(lIdx, 1); saveLevelData(); renderAdminLevels(); }); }
+    window.deleteAdminQuestion = function(lIdx, qIdx) { showConfirm('ต้องการลบคำถามข้อนี้?', () => { levelData[lIdx].questions.splice(qIdx, 1); if (levelData[lIdx].questions.length === 0) levelData.splice(lIdx, 1); saveLevelData(); renderAdminLevels(); }); }
+    
+    // Add Question Manual Form
     document.getElementById('add-level-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const title = document.getElementById('add-title').value.trim(), inst = document.getElementById('add-inst').value.trim();
         const wordsRaw = document.getElementById('add-words').value.split(',').map(w => w.trim()).filter(w => w !== ''), solRaw = document.getElementById('add-sol').value.split(',').map(s => s.trim()).filter(s => s !== '');
-        if (wordsRaw.length === 0 || solRaw.length === 0) return showMsg("ผิดพลาด", "กรุณากรอกให้ครบ");
+        if (wordsRaw.length === 0 || solRaw.length === 0) return showMsg("ผิดพลาด", "กรุณากรอกคำศัพท์และเฉลยให้ครบ (คั่นด้วยลูกน้ำ)");
         const newWords = wordsRaw.map(text => ({ text: text, emoji: randomEmojis[Math.floor(Math.random() * randomEmojis.length)] }));
         const newQuestion = { instruction: inst, words: newWords, solution: solRaw };
         let categoryIndex = levelData.findIndex(l => l.title === title);
         if (categoryIndex >= 0) { levelData[categoryIndex].questions.push(newQuestion); levelData[categoryIndex].cleared = false; } else { levelData.push({ title: title, cleared: false, questions: [newQuestion] }); }
-        saveLevelData(); renderAdminLevels(); document.getElementById('add-inst').value = ''; document.getElementById('add-words').value = ''; document.getElementById('add-sol').value = ''; document.getElementById('add-inst').focus();
+        saveLevelData(); renderAdminLevels(); 
+        document.getElementById('add-inst').value = ''; document.getElementById('add-words').value = ''; document.getElementById('add-sol').value = ''; document.getElementById('add-inst').focus();
     });
 
-    const canvas = document.getElementById('game-canvas'); const ctx = canvas.getContext('2d'); let cw, ch;
-    function resizeCanvas() { cw = window.innerWidth; ch = window.innerHeight; const dpr = window.devicePixelRatio || 1; canvas.width = cw * dpr; canvas.height = ch * dpr; ctx.scale(dpr, dpr); }
-    window.addEventListener('resize', resizeCanvas); resizeCanvas();
+    // Excel Download & Upload using SheetJS
+    document.getElementById('download-template-btn').addEventListener('click', () => {
+        const ws_data = [
+            ["Category", "Instruction", "Words", "Solution"],
+            ["ด่านที่ 1: ตัวแปร", "สร้างตัวแปร x ให้เก็บค่า 10", "10, x, =", "x, =, 10"],
+            ["ด่านที่ 1: ตัวแปร", "สร้างตัวแปร name เก็บคำว่า 'Python'", "'Python', name, =", "name, =, 'Python'"],
+            ["ด่านที่ 2: เงื่อนไข", "สร้าง if ตรวจสอบ x มากกว่า 5", "if, x, >, 5, :", "if, x, >, 5, :"]
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Questions");
+        XLSX.writeFile(wb, "PythonAR_Template.xlsx");
+    });
+
+    document.getElementById('upload-excel-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const data = evt.target.result;
+                const wb = XLSX.read(data, {type: 'binary'});
+                const sheetName = wb.SheetNames[0];
+                const sheet = wb.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(sheet, {header: 1});
+
+                if (rows.length <= 1) { showMsg("ผิดพลาด", "ไม่พบข้อมูลในไฟล์"); return; }
+
+                let successCount = 0;
+                for (let i = 1; i < rows.length; i++) {
+                    let row = rows[i];
+                    if (!row || row.length < 4) continue;
+                    
+                    let category = (row[0] || "").toString().trim();
+                    let instruction = (row[1] || "").toString().trim();
+                    let wordsStr = (row[2] || "").toString();
+                    let solutionStr = (row[3] || "").toString();
+
+                    if(!category || !instruction || !wordsStr || !solutionStr) continue;
+
+                    let wordsRaw = wordsStr.split(',').map(w => w.trim()).filter(w => w !== '');
+                    let solRaw = solutionStr.split(',').map(s => s.trim()).filter(s => s !== '');
+                    if(wordsRaw.length === 0 || solRaw.length === 0) continue;
+
+                    const newWords = wordsRaw.map(text => ({ text: text, emoji: randomEmojis[Math.floor(Math.random() * randomEmojis.length)] }));
+                    const newQuestion = { instruction: instruction, words: newWords, solution: solRaw };
+
+                    let catIdx = levelData.findIndex(l => l.title === category);
+                    if (catIdx >= 0) { levelData[catIdx].questions.push(newQuestion); levelData[catIdx].cleared = false; } 
+                    else { levelData.push({ title: category, cleared: false, questions: [newQuestion] }); }
+                    successCount++;
+                }
+
+                saveLevelData(); renderAdminLevels();
+                showMsg("สำเร็จ", `นำเข้าคำถามสำเร็จทั้งหมด ${successCount} ข้อ!`);
+            } catch(err) {
+                showMsg("ผิดพลาด", "ไม่สามารถอ่านไฟล์ Excel ได้: " + err.message);
+            }
+            document.getElementById('upload-excel-input').value = ""; // Clear input
+        };
+        reader.readAsBinaryString(file);
+    });
+
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let cw, ch;
+
+    function resizeCanvas() {
+        cw = window.innerWidth; ch = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = cw * dpr; canvas.height = ch * dpr;
+        ctx.scale(dpr, dpr);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
     const CURSOR = { NORMAL: 'normal', HOVER: 'hover', MISS: 'miss', GRAB: 'grab' };
     let input = { x: cw / 2, y: ch / 2, isPinching: false, wasPinching: false, status: CURSOR.NORMAL, usingAR: false, handLandmarks: null, thumbDistance: 1.0, missTimer: 0, handFoundTimer: Date.now() };
     
+    // Auto-Grab variables
     let dwellTarget = null; let dwellStartTime = 0; let dwellProgress = 0; const DWELL_TIME_MS = 1500; let isStickyGrab = false;
 
-    // Timer Variables
-    let playStartTime = 0; let currentPlayTime = 0; let isTimerRunning = false;
-
-    function updateMousePos(e) { if(input.usingAR) return; input.x = e.clientX || (e.touches && e.touches[0].clientX); input.y = e.clientY || (e.touches && e.touches[0].clientY); }
+    function updateMousePos(e) {
+        if(input.usingAR) return; 
+        input.x = e.clientX || (e.touches && e.touches[0].clientX); input.y = e.clientY || (e.touches && e.touches[0].clientY);
+    }
     canvas.addEventListener('mousemove', updateMousePos); canvas.addEventListener('touchmove', updateMousePos);
     canvas.addEventListener('mousedown', (e) => { if(!input.usingAR) { updateMousePos(e); input.isPinching = true; } });
     canvas.addEventListener('touchstart', (e) => { if(!input.usingAR) { updateMousePos(e); input.isPinching = true; } });
     canvas.addEventListener('mouseup', () => { if(!input.usingAR) input.isPinching = false; });
     canvas.addEventListener('touchend', () => { if(!input.usingAR) input.isPinching = false; });
 
-    const videoElement = document.getElementById('webcam-video'); let isVideoPlaying = false;
+    const videoElement = document.getElementById('webcam-video');
+    let isVideoPlaying = false;
+    
     const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
     hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
 
     hands.onResults((results) => {
         if (!input.usingAR) return; 
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            canvas.classList.add('hide-cursor'); input.handFoundTimer = Date.now();
-            const landmarks = results.multiHandLandmarks[0]; input.handLandmarks = landmarks;
+            canvas.classList.add('hide-cursor');
+            input.handFoundTimer = Date.now();
+            const landmarks = results.multiHandLandmarks[0];
+            input.handLandmarks = landmarks;
             const indexTip = landmarks[8]; const thumbTip = landmarks[4];
             input.x = (1 - indexTip.x) * cw; input.y = indexTip.y * ch;
             const dx = indexTip.x - thumbTip.x; const dy = indexTip.y - thumbTip.y;
             input.thumbDistance = Math.sqrt(dx * dx + dy * dy);
             if (!isStickyGrab) input.isPinching = input.thumbDistance < 0.12;
-        } else { input.handLandmarks = null; }
+        } else {
+            input.handLandmarks = null;
+        }
     });
 
-    async function startDetectionLoop() { if (!isVideoPlaying || !input.usingAR) return; try { await hands.send({image: videoElement}); } catch (e) { } requestAnimationFrame(startDetectionLoop); }
+    async function startDetectionLoop() {
+        if (!isVideoPlaying || !input.usingAR) return;
+        try { await hands.send({image: videoElement}); } catch (e) { }
+        requestAnimationFrame(startDetectionLoop);
+    }
 
     document.getElementById('start-ar-btn').addEventListener('click', async () => {
         const nameInput = document.getElementById('player-name-input').value.trim();
         if (!nameInput) return showMsg("แจ้งเตือน", "กรุณากรอกชื่อก่อนเริ่มเกมครับ!");
-        playerName = nameInput; await audioManager.init(); audioManager.menu();
-        loadingUI.classList.remove('hidden'); loadingUI.classList.add('block'); loadingUI.innerHTML = "<span class='animate-pulse'>⏳ กำลังขออนุญาตกล้อง...</span>";
+        playerName = nameInput; currentModeStr = "AR";
+        await audioManager.init(); audioManager.menu();
+
+        loadingUI.classList.remove('hidden'); loadingUI.classList.add('block');
+        loadingUI.innerHTML = "<span class='animate-pulse'>⏳ กำลังขออนุญาตกล้อง...</span>";
         input.usingAR = true;
+        
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("เบราว์เซอร์ไม่รองรับกล้อง");
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
             videoElement.srcObject = stream; videoElement.style.display = 'block';
-            videoElement.onloadedmetadata = () => { videoElement.play().then(() => { isVideoPlaying = true; startDetectionLoop(); startGameUI(); }).catch(e => { throw new Error("เล่นวิดีโอไม่ได้"); }); };
+            
+            videoElement.onloadedmetadata = () => {
+                videoElement.play().then(() => {
+                    isVideoPlaying = true; startDetectionLoop(); startGameUI();
+                }).catch(e => { throw new Error("เล่นวิดีโอไม่ได้"); });
+            };
         } catch (err) {
-            loadingUI.innerHTML = `<div class="bg-red-900/80 p-4 rounded-xl border border-red-500 shadow-2xl mt-4"><h3 class="text-white text-xl font-bold mb-2">⚠️ ไม่สามารถเปิดกล้องได้</h3><p class="text-red-200 text-sm mb-4">(${err.message})</p><button onclick="document.getElementById('start-mouse-btn').click()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold">ข้ามไปเล่นโหมดเมาส์แทน</button></div>`;
+            loadingUI.innerHTML = `<div class="bg-red-900/80 p-4 rounded-xl border border-red-500 shadow-2xl mt-4"><h3 class="text-white text-xl font-bold mb-2">⚠️ ไม่สามารถเปิดกล้องได้</h3><p class="text-red-200 text-sm mb-4">ระบบปฏิบัติการไม่อนุญาต</p><button onclick="document.getElementById('start-mouse-btn').click()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold">เล่นโหมดเมาส์แทน</button></div>`;
             loadingUI.classList.replace('text-cyan-300', 'text-red-400');
         }
     });
@@ -353,31 +648,60 @@
     document.getElementById('start-mouse-btn').addEventListener('click', async () => {
         const nameInput = document.getElementById('player-name-input').value.trim();
         if (!nameInput) return showMsg("แจ้งเตือน", "กรุณากรอกชื่อก่อนเริ่มเกมครับ!");
-        playerName = nameInput; await audioManager.init(); audioManager.menu();
+        playerName = nameInput; currentModeStr = "Mouse";
+        await audioManager.init(); audioManager.menu();
         input.usingAR = false; videoElement.style.display = 'none'; startGameUI();
     });
 
-    function startGameUI() {
-        document.getElementById('start-screen').classList.add('hidden-screen'); totalScore = 0; levelData.forEach(d => d.cleared = false);
-        currentState = STATE_OBJ.MENU; initMenuScreen();
+    // Logout Function
+    function logoutToStart() {
+        showConfirm('ต้องการออกจากระบบและสลับผู้เล่นใช่หรือไม่?', () => {
+            input.usingAR = false; 
+            videoElement.style.display = 'none';
+            if (videoElement.srcObject) { videoElement.srcObject.getTracks().forEach(track => track.stop()); }
+            
+            document.getElementById('player-name-input').value = "";
+            playerName = "";
+            currentState = STATE_OBJ.START;
+            loadingUI.classList.add('hidden');
+            
+            document.getElementById('start-screen').classList.remove('hidden-screen');
+        });
     }
 
     const STATE_OBJ = { START: 0, MENU: 1, PLAYING: 2, LEVEL_CLEAR: 3 };
     let currentState = STATE_OBJ.START; let currentLevelIdx = 0; let currentQuestionIdx = 0;
-    let words = [], slots = [], draggedWord = null, dragOffsetX = 0, dragOffsetY = 0; let menuButtons = [], backButton = null;
+    
+    let words = [], slots = [], draggedWord = null, dragOffsetX = 0, dragOffsetY = 0;
+    let menuButtons = [], backButton = null, logoutButton = null;
+
+    // Timer Variables (Speedrun system)
+    let isTimerRunning = false;
+    let levelStartTime = 0;
+    let totalTimeTaken = 0;
 
     class WordCard {
-        constructor(text, emoji, x, y) { this.text = text; this.emoji = emoji; this.x = x; this.y = y; this.baseX = x; this.baseY = y; this.width = 140; this.height = 160; this.isDragging = false; this.placedSlot = null; this.scale = 1; }
+        constructor(text, emoji, x, y) {
+            this.text = text; this.emoji = emoji; this.x = x; this.y = y; this.baseX = x; this.baseY = y;
+            this.width = 140; this.height = 160; this.isDragging = false; this.placedSlot = null; this.scale = 1;
+        }
         draw() {
-            ctx.save(); ctx.translate(this.x, this.y); let targetScale = this.isDragging ? 1.15 : 1.0; this.scale += (targetScale - this.scale) * 0.2; ctx.scale(this.scale, this.scale);
+            ctx.save(); ctx.translate(this.x, this.y);
+            let targetScale = this.isDragging ? 1.15 : 1.0; this.scale += (targetScale - this.scale) * 0.2;
+            ctx.scale(this.scale, this.scale);
             ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = this.isDragging ? 25 : 10; ctx.shadowOffsetY = this.isDragging ? 15 : 5;
+            
             const gradient = ctx.createLinearGradient(-this.width/2, -this.height/2, this.width/2, this.height/2);
-            if (this.placedSlot) { gradient.addColorStop(0, 'rgba(16, 185, 129, 0.7)'); gradient.addColorStop(1, 'rgba(5, 150, 105, 0.9)'); } else { gradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)'); gradient.addColorStop(1, 'rgba(30, 64, 175, 0.6)'); }
+            if (this.placedSlot) { gradient.addColorStop(0, 'rgba(16, 185, 129, 0.7)'); gradient.addColorStop(1, 'rgba(5, 150, 105, 0.9)'); } 
+            else { gradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)'); gradient.addColorStop(1, 'rgba(30, 64, 175, 0.6)'); }
+            
             ctx.fillStyle = gradient; ctx.strokeStyle = this.placedSlot ? '#34d399' : '#38bdf8'; ctx.lineWidth = this.isDragging ? 4 : 2;
             ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 20); ctx.fill(); ctx.stroke();
             ctx.beginPath(); ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1; ctx.roundRect(-this.width/2 + 2, -this.height/2 + 2, this.width - 4, this.height/2, 18); ctx.stroke();
+            
             ctx.shadowBlur = 0; ctx.font = '60px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.emoji, 0, -20);
-            ctx.font = 'bold 26px Fira Code, Kanit'; ctx.fillStyle = this.placedSlot ? '#ffffff' : '#facc15'; ctx.fillText(this.text, 0, 45); ctx.restore();
+            ctx.font = 'bold 26px Fira Code, Kanit'; ctx.fillStyle = this.placedSlot ? '#ffffff' : '#facc15'; ctx.fillText(this.text, 0, 45);
+            ctx.restore();
         }
         isHovered(px, py) { return px > this.x - this.width/2 && px < this.x + this.width/2 && py > this.y - this.height/2 && py < this.y + this.height/2; }
     }
@@ -386,59 +710,94 @@
         constructor(x, y, expectedText) { this.x = x; this.y = y; this.width = 150; this.height = 170; this.expectedText = expectedText; this.currentWord = null; }
         draw() {
             ctx.save(); ctx.translate(this.x, this.y); ctx.setLineDash([8, 8]); ctx.lineWidth = 3;
-            if (this.currentWord) { ctx.strokeStyle = '#10b981'; ctx.fillStyle = 'rgba(16, 185, 129, 0.1)'; } else { ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)'; ctx.fillStyle = 'rgba(15, 23, 42, 0.5)'; }
+            if (this.currentWord) { ctx.strokeStyle = '#10b981'; ctx.fillStyle = 'rgba(16, 185, 129, 0.1)'; } 
+            else { ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)'; ctx.fillStyle = 'rgba(15, 23, 42, 0.5)'; }
             ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 20); ctx.fill(); ctx.stroke();
-            if (!this.currentWord) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.font = '20px Kanit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText("วางที่นี่", 0, 0); } ctx.restore();
+            if (!this.currentWord) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.font = '20px Kanit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText("วางที่นี่", 0, 0); }
+            ctx.restore();
         }
     }
 
+    function startGameUI() {
+        totalScore = 0; levelData.forEach(d => d.cleared = false);
+        initMenuScreen();
+    }
+
     function initMenuScreen() {
-        currentState = STATE_OBJ.MENU; menuButtons = []; draggedWord = null; isTimerRunning = false;
-        let spacing = Math.min(90, ch / (levelData.length + 1.5)); let startY = Math.max(160, ch / 2 - ((levelData.length - 1) * spacing) / 2);
+        currentState = STATE_OBJ.MENU; menuButtons = []; draggedWord = null; 
+        let spacing = Math.min(90, ch / (levelData.length + 1.5));
+        let startY = Math.max(160, ch / 2 - ((levelData.length - 1) * spacing) / 2);
+        
         levelData.forEach((data, index) => {
             let titleText = data.cleared ? data.title + " ⭐" : data.title;
             menuButtons.push({
                 x: cw / 2, y: startY + (index * spacing), width: 500, height: 70, text: titleText,
                 isHovered: function(px, py) { return px > this.x - this.width/2 && px < this.x + this.width/2 && py > this.y - this.height/2 && py < this.y + this.height/2; },
                 draw: function(hovering) {
-                    ctx.save(); ctx.translate(this.x, this.y); ctx.shadowColor = data.cleared ? 'rgba(250, 204, 21, 0.8)' : 'rgba(56, 189, 248, 0.8)'; ctx.shadowBlur = hovering ? 25 : 5;
+                    ctx.save(); ctx.translate(this.x, this.y);
+                    ctx.shadowColor = data.cleared ? 'rgba(250, 204, 21, 0.8)' : 'rgba(56, 189, 248, 0.8)'; ctx.shadowBlur = hovering ? 25 : 5;
                     ctx.fillStyle = hovering ? (data.cleared ? '#eab308' : '#0284c7') : (data.cleared ? 'rgba(202, 138, 4, 0.5)' : 'rgba(15, 23, 42, 0.8)');
-                    ctx.strokeStyle = data.cleared ? '#fde047' : '#38bdf8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 20); ctx.fill(); ctx.stroke();
+                    ctx.strokeStyle = data.cleared ? '#fde047' : '#38bdf8'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 20); ctx.fill(); ctx.stroke();
                     ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.font = 'bold 24px Kanit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.text, 0, 0); ctx.restore();
                 }
             });
         });
+        
+        // Custom Logout Button in Canvas
+        logoutButton = {
+            x: 120, y: 50, width: 170, height: 45, text: "🚪 ออกจากระบบ",
+            isHovered: function(px, py) { return px > this.x - this.width/2 && px < this.x + this.width/2 && py > this.y - this.height/2 && py < this.y + this.height/2; },
+            draw: function(hovering) {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.fillStyle = hovering ? '#ef4444' : 'rgba(220, 38, 38, 0.2)'; ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 10); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = hovering ? '#ffffff' : '#fca5a5'; ctx.font = 'bold 18px Kanit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.text, 0, 0); ctx.restore();
+            }
+        };
+
         backButton = {
             x: 120, y: 50, width: 150, height: 50, text: "◀ กลับเมนู",
             isHovered: function(px, py) { return px > this.x - this.width/2 && px < this.x + this.width/2 && py > this.y - this.height/2 && py < this.y + this.height/2; },
             draw: function(hovering) {
                 ctx.save(); ctx.translate(this.x, this.y); ctx.fillStyle = hovering ? '#ef4444' : 'rgba(15, 23, 42, 0.8)'; ctx.strokeStyle = '#f87171'; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 15); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px Kanit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.text, 0, 0); ctx.restore();
+                ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 15); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px Kanit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.text, 0, 0); ctx.restore();
             }
         };
     }
 
-    function loadLevel(index) { currentLevelIdx = index; currentQuestionIdx = 0; currentPlayTime = 0; loadQuestion(currentLevelIdx, currentQuestionIdx); }
+    function loadLevel(index) { 
+        currentLevelIdx = index; 
+        currentQuestionIdx = 0; 
+        totalTimeTaken = 0; // Reset timer for new level
+        loadQuestion(currentLevelIdx, currentQuestionIdx); 
+    }
+
     function loadQuestion(lIdx, qIdx) {
         currentState = STATE_OBJ.PLAYING; draggedWord = null; isStickyGrab = false; input.isPinching = false;
-        
-        // Timer Logic: เริ่มจับเวลาเมื่อโหลดคำถาม
-        playStartTime = Date.now();
-        isTimerRunning = true;
-
         const data = levelData[lIdx], qData = data.questions[qIdx]; words = []; slots = [];
+        
+        // Shuffle words
         let shuffledWords = [...qData.words].sort(() => Math.random() - 0.5);
         let startX = cw / 2 - ((shuffledWords.length - 1) * 170) / 2;
         shuffledWords.forEach((w, i) => { words.push(new WordCard(w.text, w.emoji, startX + i * 170, ch * 0.35)); });
+        
         let slotStartX = cw / 2 - ((qData.solution.length - 1) * 170) / 2;
         qData.solution.forEach((sol, i) => { slots.push(new DropSlot(slotStartX + i * 170, ch * 0.75, sol)); });
+
+        // Start timer
+        levelStartTime = Date.now();
+        isTimerRunning = true;
     }
 
     function triggerActionOn(target) {
-        if (target === backButton) { audioManager.menu(); initMenuScreen(); input.status = CURSOR.GRAB; }
+        if (target === logoutButton) { logoutToStart(); input.status = CURSOR.GRAB; }
+        else if (target === backButton) { audioManager.menu(); initMenuScreen(); input.status = CURSOR.GRAB; }
         else if (menuButtons.includes(target)) { audioManager.menu(); currentLevelIdx = menuButtons.indexOf(target); loadLevel(currentLevelIdx); input.status = CURSOR.GRAB; }
         else if (target instanceof WordCard) {
-            audioManager.grab(); draggedWord = target; target.isDragging = true; dragOffsetX = input.x - target.x; dragOffsetY = input.y - target.y; words.splice(words.indexOf(target), 1); words.push(target); isStickyGrab = true; input.isPinching = true; 
+            audioManager.grab(); draggedWord = target; target.isDragging = true;
+            dragOffsetX = input.x - target.x; dragOffsetY = input.y - target.y;
+            words.splice(words.indexOf(target), 1); words.push(target); isStickyGrab = true; input.isPinching = true; 
         } else if (target === "drop") {
             audioManager.drop(); let placed = false;
             for (let slot of slots) {
@@ -456,12 +815,15 @@
 
     function updateLogic() {
         let isHoveringSomething = false, currentHoveredTarget = null;
-        if (currentState === STATE_OBJ.MENU) currentHoveredTarget = menuButtons.find(b => b.isHovered(input.x, input.y));
+        if (currentState === STATE_OBJ.MENU) {
+            if (logoutButton && logoutButton.isHovered(input.x, input.y)) currentHoveredTarget = logoutButton;
+            else currentHoveredTarget = menuButtons.find(b => b.isHovered(input.x, input.y));
+        }
         else if (currentState === STATE_OBJ.PLAYING) {
             if (backButton && backButton.isHovered(input.x, input.y)) currentHoveredTarget = backButton;
             else if (draggedWord) {
                 let overSlot = slots.find(s => Math.sqrt(Math.pow(draggedWord.x - s.x, 2) + Math.pow(draggedWord.y - s.y, 2)) < 90);
-                currentHoveredTarget = "drop"; 
+                if (overSlot) currentHoveredTarget = "drop"; else currentHoveredTarget = "drop"; 
             } else { for (let i = words.length - 1; i >= 0; i--) { if (words[i].isHovered(input.x, input.y)) { currentHoveredTarget = words[i]; break; } } }
         }
         if (currentHoveredTarget) isHoveringSomething = true;
@@ -488,22 +850,21 @@
     function checkWinCondition() {
         let isWin = true; for (let slot of slots) { if (!slot.currentWord || slot.currentWord.text !== slot.expectedText) { isWin = false; break; } }
         if (isWin) {
-            // Timer Logic: หยุดเวลาชั่วคราวและเก็บสะสมเวลาของข้อนั้นๆ
-            if (isTimerRunning) {
-                currentPlayTime += (Date.now() - playStartTime) / 1000;
-                isTimerRunning = false;
-            }
+            // Stop timer and add to total time
+            isTimerRunning = false;
+            totalTimeTaken += (Date.now() - levelStartTime) / 1000;
 
             audioManager.correct(); currentState = STATE_OBJ.LEVEL_CLEAR; totalScore += 100;
+            
             setTimeout(() => { 
                 currentQuestionIdx++;
                 if (currentQuestionIdx < levelData[currentLevelIdx].questions.length) {
-                    loadQuestion(currentLevelIdx, currentQuestionIdx);
+                    loadQuestion(currentLevelIdx, currentQuestionIdx); // Will start timer again
                 } else {
-                    // หากผ่านทุกข้อในด่าน ให้บันทึกคะแนนรวมเวลา
                     if (!levelData[currentLevelIdx].cleared) { 
-                        levelData[currentLevelIdx].cleared = true; saveLevelData(); 
-                        savePlayerProgress(totalScore, levelData[currentLevelIdx].title, currentPlayTime, input.usingAR ? 'AR' : 'Mouse'); 
+                        levelData[currentLevelIdx].cleared = true; 
+                        saveLevelData(); 
+                        savePlayerProgress(totalScore, levelData[currentLevelIdx].title, totalTimeTaken); 
                     }
                     initMenuScreen(); 
                 }
@@ -519,21 +880,27 @@
         if (currentState === STATE_OBJ.PLAYING || currentState === STATE_OBJ.LEVEL_CLEAR) {
             const data = levelData[currentLevelIdx], qData = data.questions[currentQuestionIdx]; 
             if (currentState === STATE_OBJ.PLAYING && backButton) backButton.draw(backButton.isHovered(input.x, input.y));
+            
             ctx.textAlign = 'left'; ctx.font = 'bold 26px Kanit'; ctx.fillStyle = '#38bdf8'; ctx.fillText(data.title + ' (ข้อ ' + (currentQuestionIdx + 1) + '/' + data.questions.length + ')', 200, 50);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; ctx.beginPath(); ctx.roundRect(cw/2 - 350, 25, 700, 50, 25); ctx.fill();
-            ctx.textAlign = 'center'; ctx.fillStyle = '#facc15'; ctx.font = '22px Kanit'; ctx.fillText('💡 โจทย์: ' + qData.instruction, cw/2, 50);
             
-            ctx.textAlign = 'right'; ctx.font = 'bold 24px Kanit'; ctx.fillStyle = '#10b981'; ctx.fillText('คะแนน: ' + totalScore, cw - 40, 35);
-            
-            // Timer Render
-            let displayTime = currentPlayTime;
-            if (isTimerRunning) displayTime += (Date.now() - playStartTime) / 1000;
-            ctx.fillStyle = '#f43f5e'; ctx.fillText('⏱️ เวลา: ' + displayTime.toFixed(1) + ' วิ', cw - 40, 70);
+            // Timer Display
+            let displayTime = totalTimeTaken;
+            if (isTimerRunning) displayTime += (Date.now() - levelStartTime) / 1000;
+            ctx.fillStyle = '#fbbf24'; ctx.font = '20px Fira Code, Kanit'; ctx.fillText(`⏱️ เวลา: ${displayTime.toFixed(1)}s`, 200, 80);
 
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; ctx.beginPath(); ctx.roundRect(cw/2 - 300, 25, 600, 50, 25); ctx.fill();
+            ctx.textAlign = 'center'; ctx.fillStyle = '#facc15'; ctx.font = '22px Kanit'; ctx.fillText('💡 โจทย์: ' + qData.instruction, cw/2, 50);
+            ctx.textAlign = 'right'; ctx.font = 'bold 28px Kanit'; ctx.fillStyle = '#10b981'; ctx.fillText('คะแนน: ' + totalScore, cw - 40, 50);
         } else if (currentState === STATE_OBJ.MENU) {
+            if (logoutButton) logoutButton.draw(logoutButton.isHovered(input.x, input.y));
+
             ctx.textAlign = 'right'; ctx.font = 'bold 28px Kanit'; ctx.fillStyle = '#10b981'; ctx.fillText('คะแนนรวม: ' + totalScore, cw - 40, 50);
-            ctx.textAlign = 'left'; ctx.font = '20px Kanit'; ctx.fillStyle = '#94a3b8'; ctx.fillText('ผู้เล่น: ' + playerName + ' | โหมด: ' + (input.usingAR ? '📸 กล้อง (AR)' : '🖱️ เมาส์'), 40, 50);
+            
+            // Show Player Name in top center
+            ctx.textAlign = 'center'; ctx.font = '22px Kanit'; ctx.fillStyle = '#94a3b8'; 
+            ctx.fillText(`ผู้เล่น: ${playerName} | โหมด: ${currentModeStr === 'AR' ? '📸 กล้อง (AR)' : '🖱️ เมาส์'}`, cw/2, 50);
         }
+        
         if (input.usingAR && Date.now() - input.handFoundTimer > 1000 && currentState !== STATE_OBJ.START) {
             ctx.fillStyle = 'rgba(239, 68, 68, 0.9)'; ctx.beginPath(); ctx.roundRect(cw/2 - 150, ch - 80, 300, 50, 15); ctx.fill();
             ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.font = '20px Kanit'; ctx.fillText("⚠️ กำลังหามือของคุณ...", cw/2, ch - 55);
@@ -566,6 +933,9 @@
         ctx.fillStyle = 'rgba(5, 9, 20, 0.8)'; ctx.fillRect(0, 0, cw, ch); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.shadowColor = colorClass === 'green' ? '#34d399' : '#38bdf8'; ctx.shadowBlur = 40; ctx.fillStyle = colorClass === 'green' ? '#10b981' : '#00f3ff'; ctx.font = 'bold 80px Kanit'; ctx.fillText(title, cw/2, ch/2 - 40);
         ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.font = '30px Kanit'; ctx.fillText(subtitle, cw/2, ch/2 + 50);
+        
+        let displayTime = totalTimeTaken;
+        ctx.fillStyle = '#facc15'; ctx.font = '24px Fira Code, Kanit'; ctx.fillText(`⏱️ เวลาที่ใช้: ${displayTime.toFixed(2)} วินาที`, cw/2, ch/2 + 100);
     }
 
     function drawLoop() {
