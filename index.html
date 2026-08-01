@@ -257,7 +257,7 @@
 <script>
     
     // 👉👉 อัปเดต URL ของ Web App ตรงนี้ 👈👈
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyp5PfXqVk2bXQZ2WcVJ_z6HrjcSIxDVTlfEbOaiZ7tZQkSElUegICkX87OIfFyQd0Mhg/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqV5L6iH3-9jW3P5o0J5rZJ5Z2fM0D5lA5u_kXwT3Z_V5sX_7uA6W9H0R2P7G5Y1/exec";
 
     // Utility Modals
     function showMsg(title, text) {
@@ -307,7 +307,7 @@
         { title: "ด่านที่ 3: เงื่อนไข (If-Else)", cleared: false, questions: [ { instruction: "ตรวจสอบว่าคะแนน (score) มากกว่า 50 หรือไม่", words: [ { text: ">", emoji: "📈" }, { text: "if", emoji: "🤔" }, { text: ":", emoji: "จุด" }, { text: "50", emoji: "💯" }, { text: "score", emoji: "⭐" } ], solution: ["if", "score", ">", "50", ":"] } ] },
     ];
 
-    let levelData = [];
+    let levelData = JSON.parse(JSON.stringify(defaultLevelData)); // แก้ไข: โหลดข้อมูลสำรองรอไว้เลย ป้องกันการค้าง
     let playerName = ""; 
     let currentModeStr = "Mouse"; // "AR" หรือ "Mouse"
     let leaderboardDataFull = { ar: [], mouse: [] };
@@ -574,6 +574,69 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
+    // ----------------------------------------------------
+    // กู้คืนตัวแปรระบบ & คลาสวัตถุที่หายไป (Restored Missing Classes & States)
+    // ----------------------------------------------------
+    const STATE_OBJ = { START: 0, MENU: 1, PLAYING: 2, LEVEL_CLEAR: 3 };
+    let currentState = STATE_OBJ.START;
+    let currentLevelIdx = 0;
+    let currentQuestionIdx = 0;
+    let totalScore = 0;
+    let totalTimeTaken = 0;
+    let levelStartTime = 0;
+    let isTimerRunning = false;
+
+    let words = [];
+    let slots = [];
+    let draggedWord = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let menuButtons = [];
+    let backButton = null;
+    let logoutButton = null;
+
+    class WordCard {
+        constructor(text, emoji, x, y) {
+            this.text = text; this.emoji = emoji;
+            this.x = x; this.y = y; this.baseX = x; this.baseY = y;
+            this.width = 140; this.height = 160;
+            this.isDragging = false; this.placedSlot = null; this.scale = 1;
+        }
+        draw() {
+            ctx.save(); ctx.translate(this.x, this.y);
+            let targetScale = this.isDragging ? 1.15 : 1.0;
+            this.scale += (targetScale - this.scale) * 0.2;
+            ctx.scale(this.scale, this.scale);
+            ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = this.isDragging ? 25 : 10; ctx.shadowOffsetY = this.isDragging ? 15 : 5;
+            
+            const gradient = ctx.createLinearGradient(-this.width/2, -this.height/2, this.width/2, this.height/2);
+            if (this.placedSlot) { gradient.addColorStop(0, 'rgba(16, 185, 129, 0.7)'); gradient.addColorStop(1, 'rgba(5, 150, 105, 0.9)'); } 
+            else { gradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)'); gradient.addColorStop(1, 'rgba(30, 64, 175, 0.6)'); }
+            
+            ctx.fillStyle = gradient; ctx.strokeStyle = this.placedSlot ? '#34d399' : '#38bdf8'; ctx.lineWidth = this.isDragging ? 4 : 2;
+            ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 20); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1; ctx.roundRect(-this.width/2 + 2, -this.height/2 + 2, this.width - 4, this.height/2, 18); ctx.stroke();
+            
+            ctx.shadowBlur = 0; ctx.font = '60px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.emoji, 0, -20);
+            ctx.font = 'bold 26px Fira Code, Kanit'; ctx.fillStyle = this.placedSlot ? '#ffffff' : '#facc15'; ctx.fillText(this.text, 0, 45);
+            ctx.restore();
+        }
+        isHovered(px, py) { return px > this.x - this.width/2 && px < this.x + this.width/2 && py > this.y - this.height/2 && py < this.y + this.height/2; }
+    }
+
+    class DropSlot {
+        constructor(x, y, expectedText) { this.x = x; this.y = y; this.width = 150; this.height = 170; this.expectedText = expectedText; this.currentWord = null; }
+        draw() {
+            ctx.save(); ctx.translate(this.x, this.y); ctx.setLineDash([8, 8]); ctx.lineWidth = 3;
+            if (this.currentWord) { ctx.strokeStyle = '#10b981'; ctx.fillStyle = 'rgba(16, 185, 129, 0.1)'; } 
+            else { ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)'; ctx.fillStyle = 'rgba(15, 23, 42, 0.5)'; }
+            ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 20); ctx.fill(); ctx.stroke();
+            if (!this.currentWord) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.font = '20px Kanit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText("วางที่นี่", 0, 0); }
+            ctx.restore();
+        }
+    }
+    // ----------------------------------------------------
+
     const CURSOR = { NORMAL: 'normal', HOVER: 'hover', MISS: 'miss', GRAB: 'grab' };
     let input = { x: cw / 2, y: ch / 2, isPinching: false, wasPinching: false, status: CURSOR.NORMAL, usingAR: false, handLandmarks: null, thumbDistance: 1.0, missTimer: 0, handFoundTimer: Date.now() };
     
@@ -623,7 +686,8 @@
         const nameInput = document.getElementById('player-name-input').value.trim();
         if (!nameInput) return showMsg("แจ้งเตือน", "กรุณากรอกชื่อก่อนเริ่มเกมครับ!");
         playerName = nameInput; currentModeStr = "AR";
-        await audioManager.init(); audioManager.menu();
+        
+        try { await audioManager.init(); audioManager.menu(); } catch(e) { console.warn("ระบบเสียงถูกบล็อกโดยเบราว์เซอร์"); } // แก้ไข: ดักจับ Error ระบบเสียง
 
         loadingUI.classList.remove('hidden'); loadingUI.classList.add('block');
         loadingUI.innerHTML = "<span class='animate-pulse'>⏳ กำลังขออนุญาตกล้อง...</span>";
@@ -649,7 +713,9 @@
         const nameInput = document.getElementById('player-name-input').value.trim();
         if (!nameInput) return showMsg("แจ้งเตือน", "กรุณากรอกชื่อก่อนเริ่มเกมครับ!");
         playerName = nameInput; currentModeStr = "Mouse";
-        await audioManager.init(); audioManager.menu();
+        
+        try { await audioManager.init(); audioManager.menu(); } catch(e) { console.warn("ระบบเสียงถูกบล็อกโดยเบราว์เซอร์"); } // แก้ไข: ดักจับ Error ระบบเสียง
+        
         input.usingAR = false; videoElement.style.display = 'none'; startGameUI();
     });
 
@@ -669,56 +735,8 @@
         });
     }
 
-    const STATE_OBJ = { START: 0, MENU: 1, PLAYING: 2, LEVEL_CLEAR: 3 };
-    let currentState = STATE_OBJ.START; let currentLevelIdx = 0; let currentQuestionIdx = 0;
-    
-    let words = [], slots = [], draggedWord = null, dragOffsetX = 0, dragOffsetY = 0;
-    let menuButtons = [], backButton = null, logoutButton = null;
-
-    // Timer Variables (Speedrun system)
-    let isTimerRunning = false;
-    let levelStartTime = 0;
-    let totalTimeTaken = 0;
-
-    class WordCard {
-        constructor(text, emoji, x, y) {
-            this.text = text; this.emoji = emoji; this.x = x; this.y = y; this.baseX = x; this.baseY = y;
-            this.width = 140; this.height = 160; this.isDragging = false; this.placedSlot = null; this.scale = 1;
-        }
-        draw() {
-            ctx.save(); ctx.translate(this.x, this.y);
-            let targetScale = this.isDragging ? 1.15 : 1.0; this.scale += (targetScale - this.scale) * 0.2;
-            ctx.scale(this.scale, this.scale);
-            ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = this.isDragging ? 25 : 10; ctx.shadowOffsetY = this.isDragging ? 15 : 5;
-            
-            const gradient = ctx.createLinearGradient(-this.width/2, -this.height/2, this.width/2, this.height/2);
-            if (this.placedSlot) { gradient.addColorStop(0, 'rgba(16, 185, 129, 0.7)'); gradient.addColorStop(1, 'rgba(5, 150, 105, 0.9)'); } 
-            else { gradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)'); gradient.addColorStop(1, 'rgba(30, 64, 175, 0.6)'); }
-            
-            ctx.fillStyle = gradient; ctx.strokeStyle = this.placedSlot ? '#34d399' : '#38bdf8'; ctx.lineWidth = this.isDragging ? 4 : 2;
-            ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 20); ctx.fill(); ctx.stroke();
-            ctx.beginPath(); ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1; ctx.roundRect(-this.width/2 + 2, -this.height/2 + 2, this.width - 4, this.height/2, 18); ctx.stroke();
-            
-            ctx.shadowBlur = 0; ctx.font = '60px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.emoji, 0, -20);
-            ctx.font = 'bold 26px Fira Code, Kanit'; ctx.fillStyle = this.placedSlot ? '#ffffff' : '#facc15'; ctx.fillText(this.text, 0, 45);
-            ctx.restore();
-        }
-        isHovered(px, py) { return px > this.x - this.width/2 && px < this.x + this.width/2 && py > this.y - this.height/2 && py < this.y + this.height/2; }
-    }
-
-    class DropSlot {
-        constructor(x, y, expectedText) { this.x = x; this.y = y; this.width = 150; this.height = 170; this.expectedText = expectedText; this.currentWord = null; }
-        draw() {
-            ctx.save(); ctx.translate(this.x, this.y); ctx.setLineDash([8, 8]); ctx.lineWidth = 3;
-            if (this.currentWord) { ctx.strokeStyle = '#10b981'; ctx.fillStyle = 'rgba(16, 185, 129, 0.1)'; } 
-            else { ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)'; ctx.fillStyle = 'rgba(15, 23, 42, 0.5)'; }
-            ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 20); ctx.fill(); ctx.stroke();
-            if (!this.currentWord) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.font = '20px Kanit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText("วางที่นี่", 0, 0); }
-            ctx.restore();
-        }
-    }
-
     function startGameUI() {
+        document.getElementById('start-screen').classList.add('hidden-screen'); // แก้ไข: เพิ่มคำสั่งซ่อนหน้าจอเริ่มต้น
         totalScore = 0; levelData.forEach(d => d.cleared = false);
         initMenuScreen();
     }
