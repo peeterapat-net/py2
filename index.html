@@ -317,7 +317,8 @@
         if (APPS_SCRIPT_URL) {
             loadingUI.classList.remove('hidden'); loadingUI.classList.add('block');
             loadingUI.innerText = "⏳ กำลังซิงค์ข้อมูลจาก Server...";
-            fetch(APPS_SCRIPT_URL + "?action=getLevels")
+            // แก้ไข: เพิ่ม timestamp (&t=...) เพื่อป้องกันเบราว์เซอร์จำข้อมูลเก่า
+            fetch(APPS_SCRIPT_URL + "?action=getLevels&t=" + new Date().getTime())
                 .then(res => { if (!res.ok) throw new Error("Network Error"); return res.json(); })
                 .then(data => {
                     levelData = (data && data.length > 0) ? data : JSON.parse(JSON.stringify(defaultLevelData));
@@ -367,7 +368,8 @@
         document.getElementById('leaderboard-loading').classList.remove('hidden');
         document.getElementById('leaderboard-content').classList.add('hidden');
         
-        fetch(APPS_SCRIPT_URL + "?action=getLeaderboard")
+        // แก้ไข: เพิ่ม timestamp (&t=...) เพื่อบังคับดึงข้อมูลใหม่เสมอแบบ Real-time
+        fetch(APPS_SCRIPT_URL + "?action=getLeaderboard&t=" + new Date().getTime(), { cache: "no-store" })
             .then(res => { if (!res.ok) throw new Error("Network Error"); return res.json(); })
             .then(data => {
                 leaderboardDataFull = data;
