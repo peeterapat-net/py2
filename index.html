@@ -257,7 +257,7 @@
 <script>
     
     // 👉👉 อัปเดต URL ของ Web App ตรงนี้ 👈👈
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8kf5sA0triieCLdFbZ0Pe82kq2-fQhz_5Q34CbcwIk4kHy6flzQQmiL9WLT8HN_ZslA/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqV5L6iH3-9jW3P5o0J5rZJ5Z2fM0D5lA5u_kXwT3Z_V5sX_7uA6W9H0R2P7G5Y1/exec";
 
     // Utility Modals
     function showMsg(title, text) {
@@ -463,7 +463,7 @@
     // Admin Setup
     document.getElementById('close-admin-btn').addEventListener('click', () => { adminScreen.classList.add('hidden-screen'); document.getElementById('start-screen').classList.remove('hidden-screen'); });
     document.getElementById('reset-default-btn').addEventListener('click', () => { 
-        showConfirm('คุณแน่ใจหรือไม่ว่าจะลบข้อมูลทั้งหมดแล้วคืนค่าเริ่มต้น?', () => {
+        showConfirm('คืนค่าเริ่มต้นทั้งหมดหรือไม่?', () => {
             levelData = JSON.parse(JSON.stringify(defaultLevelData)); saveLevelData(); renderAdminLevels();
         });
     });
@@ -474,28 +474,42 @@
         levelData.forEach((level, lIdx) => {
             if (datalist) { const option = document.createElement('option'); option.value = level.title; datalist.appendChild(option); }
             const catDiv = document.createElement('div'); catDiv.className = "bg-slate-800/80 rounded-lg border border-slate-600 mb-4 overflow-hidden";
-            let html = `<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-slate-700/50 border-b border-slate-600 gap-2"><h4 class="text-cyan-300 font-bold">${level.title} <span class="text-xs text-gray-400 font-normal">(${level.questions.length} ข้อ)</span></h4><button onclick="deleteAdminCategory(${lIdx})" class="text-red-400 hover:text-red-300 text-sm underline shrink-0">ลบหมวดหมู่นี้</button></div><div class="p-3 space-y-2">`;
+            let html = `<div class="flex justify-between items-center p-3 bg-slate-700/50 border-b border-slate-600"><h4 class="text-cyan-300 font-bold">${level.title} <span class="text-xs text-gray-400 font-normal">(${level.questions.length} ข้อ)</span></h4><button onclick="deleteAdminCategory(${lIdx})" class="text-red-400 hover:text-red-300 text-sm underline">ลบหมวด</button></div><div class="p-3 space-y-2">`;
             level.questions.forEach((q, qIdx) => {
-                html += `<div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-slate-700 gap-2"><div class="flex-1 min-w-0"><p class="text-sm text-gray-200 truncate"><span class="text-emerald-400 font-bold">ข้อ ${qIdx + 1}:</span> ${q.instruction}</p><p class="text-xs text-gray-400 mt-1 truncate">เฉลย: ${q.solution.join(' ')}</p></div><button onclick="deleteAdminQuestion(${lIdx}, ${qIdx})" class="bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white px-2 py-1 rounded text-xs border border-red-500/50 shrink-0">ลบ</button></div>`;
+                html += `<div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-slate-700"><div><p class="text-sm text-gray-200"><span class="text-emerald-400 font-bold">ข้อ ${qIdx + 1}:</span> ${q.instruction}</p><p class="text-xs text-gray-400 mt-1">เฉลย: ${q.solution.join(' ')}</p></div><button onclick="deleteAdminQuestion(${lIdx}, ${qIdx})" class="bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white px-2 py-1 rounded text-xs border border-red-500/50 ml-2">ลบ</button></div>`;
             });
             catDiv.innerHTML = html + '</div>'; adminLevelList.appendChild(catDiv);
         });
     }
+
+    window.deleteAdminCategory = function(lIdx) { showConfirm('ลบหมวดหมู่นี้?', () => { levelData.splice(lIdx, 1); saveLevelData(); renderAdminLevels(); }); }
+    window.deleteAdminQuestion = function(lIdx, qIdx) { showConfirm('ลบคำถามนี้?', () => { levelData[lIdx].questions.splice(qIdx, 1); if (levelData[lIdx].questions.length === 0) levelData.splice(lIdx, 1); saveLevelData(); renderAdminLevels(); }); }
     
-    window.deleteAdminCategory = function(lIdx) { showConfirm('ต้องการลบหมวดหมู่นี้ทั้งหมดหรือไม่?', () => { levelData.splice(lIdx, 1); saveLevelData(); renderAdminLevels(); }); }
-    window.deleteAdminQuestion = function(lIdx, qIdx) { showConfirm('ต้องการลบคำถามข้อนี้?', () => { levelData[lIdx].questions.splice(qIdx, 1); if (levelData[lIdx].questions.length === 0) levelData.splice(lIdx, 1); saveLevelData(); renderAdminLevels(); }); }
-    
-    // Add Question Manual Form
     document.getElementById('add-level-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const title = document.getElementById('add-title').value.trim(), inst = document.getElementById('add-inst').value.trim();
         const wordsRaw = document.getElementById('add-words').value.split(',').map(w => w.trim()).filter(w => w !== ''), solRaw = document.getElementById('add-sol').value.split(',').map(s => s.trim()).filter(s => s !== '');
-        if (wordsRaw.length === 0 || solRaw.length === 0) return showMsg("ผิดพลาด", "กรุณากรอกคำศัพท์และเฉลยให้ครบ (คั่นด้วยลูกน้ำ)");
+        if (wordsRaw.length === 0 || solRaw.length === 0) return showMsg("ผิดพลาด", "กรุณากรอกให้ครบ");
         const newWords = wordsRaw.map(text => ({ text: text, emoji: randomEmojis[Math.floor(Math.random() * randomEmojis.length)] }));
         const newQuestion = { instruction: inst, words: newWords, solution: solRaw };
+        
         let categoryIndex = levelData.findIndex(l => l.title === title);
-        if (categoryIndex >= 0) { levelData[categoryIndex].questions.push(newQuestion); levelData[categoryIndex].cleared = false; } else { levelData.push({ title: title, cleared: false, questions: [newQuestion] }); }
+        if (categoryIndex >= 0) { 
+            // 🛡️ กรองข้อซ้ำ: เช็คว่ามีโจทย์ข้อนี้อยู่แล้วหรือไม่ ถ้ามีไม่ให้แอดซ้ำ
+            let isDuplicate = levelData[categoryIndex].questions.some(q => q.instruction === inst);
+            if(isDuplicate) return showMsg("แจ้งเตือน", "มีโจทย์ข้อนี้อยู่ในหมวดหมู่นี้แล้วครับ!");
+            
+            levelData[categoryIndex].questions.push(newQuestion); 
+            levelData[categoryIndex].cleared = false; 
+        } else { 
+            levelData.push({ title: title, cleared: false, questions: [newQuestion] }); 
+        }
+        
+        // 🔄 เรียงลำดับด่านตามตัวเลข (เช่น ด่านที่ 2 จะไม่ไปอยู่หลังด่านที่ 10)
+        levelData.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
+        
         saveLevelData(); renderAdminLevels(); 
+        showMsg("สำเร็จ", "เพิ่มข้อคำถามเรียบร้อยแล้ว");
         document.getElementById('add-inst').value = ''; document.getElementById('add-words').value = ''; document.getElementById('add-sol').value = ''; document.getElementById('add-inst').focus();
     });
 
@@ -548,13 +562,26 @@
                     const newQuestion = { instruction: instruction, words: newWords, solution: solRaw };
 
                     let catIdx = levelData.findIndex(l => l.title === category);
-                    if (catIdx >= 0) { levelData[catIdx].questions.push(newQuestion); levelData[catIdx].cleared = false; } 
-                    else { levelData.push({ title: category, cleared: false, questions: [newQuestion] }); }
-                    successCount++;
+                    if (catIdx >= 0) { 
+                        // 🛡️ กรองคำถามซ้ำ หากมีคำสั่ง (Instruction) เหมือนกันเป๊ะให้ข้ามการบันทึก
+                        let isDuplicate = levelData[catIdx].questions.some(q => q.instruction === instruction);
+                        if (!isDuplicate) {
+                            levelData[catIdx].questions.push(newQuestion); 
+                            levelData[catIdx].cleared = false; 
+                            successCount++;
+                        }
+                    } 
+                    else { 
+                        levelData.push({ title: category, cleared: false, questions: [newQuestion] }); 
+                        successCount++;
+                    }
                 }
 
+                // 🔄 เรียงลำดับด่านตามตัวเลขก่อนทำการเซฟ
+                levelData.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
+
                 saveLevelData(); renderAdminLevels();
-                showMsg("สำเร็จ", `นำเข้าคำถามสำเร็จทั้งหมด ${successCount} ข้อ!`);
+                showMsg("สำเร็จ", `นำเข้าคำถามสำเร็จทั้งหมด ${successCount} ข้อ! (ข้ามข้อที่ซ้ำกันแล้ว)`);
             } catch(err) {
                 showMsg("ผิดพลาด", "ไม่สามารถอ่านไฟล์ Excel ได้: " + err.message);
             }
