@@ -70,6 +70,14 @@
         .hidden-screen { opacity: 0; pointer-events: none; }
         .hide-cursor { cursor: none !important; }
         
+        /* เพิ่มรูปปกพื้นหลังสำหรับหน้า Start Screen */
+        #start-screen {
+            background: linear-gradient(rgba(5, 9, 20, 0.4), rgba(5, 9, 20, 0.9)), url('https://img2.pic.in.th/bg-py.md.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.6); border-radius: 4px; }
@@ -257,7 +265,7 @@
 <script>
     
     // 👉👉 อัปเดต URL ของ Web App ตรงนี้ 👈👈
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8kf5sA0triieCLdFbZ0Pe82kq2-fQhz_5Q34CbcwIk4kHy6flzQQmiL9WLT8HN_ZslA/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqV5L6iH3-9jW3P5o0J5rZJ5Z2fM0D5lA5u_kXwT3Z_V5sX_7uA6W9H0R2P7G5Y1/exec";
 
     // Utility Modals
     function showMsg(title, text) {
