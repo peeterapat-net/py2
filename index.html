@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- เพิ่มคำสั่งนี้เพื่อแก้ปัญหาเว็บฝากรูปบล็อกการแสดงผลรูปภาพ (Hotlink Protection) -->
+    <meta name="referrer" content="no-referrer">
     <title>Python AR Challenge: Make a Sentence</title>
     
     <!-- Tailwind CSS -->
@@ -70,12 +72,13 @@
         .hidden-screen { opacity: 0; pointer-events: none; }
         .hide-cursor { cursor: none !important; }
         
-        /* เพิ่มรูปปกพื้นหลังสำหรับหน้า Start Screen */
+        /* ปรับปรุงโค้ดภาพพื้นหลัง บังคับแสดงผลด้วย !important และใช้ background-image ให้ชัดเจน */
         #start-screen {
-            background: linear-gradient(rgba(5, 9, 20, 0.4), rgba(5, 9, 20, 0.9)), url('https://img1.pic.in.th/images/bg-py-1.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+            background-image: linear-gradient(rgba(5, 9, 20, 0.3), rgba(5, 9, 20, 0.9)), url('https://img1.pic.in.th/images/bg-py-1b2447215da690391.jpg') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            background-color: transparent !important;
         }
 
         ::-webkit-scrollbar { width: 8px; }
@@ -265,7 +268,7 @@
 <script>
     
     // 👉👉 อัปเดต URL ของ Web App ตรงนี้ 👈👈
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4xZojTPDwmggLidTS84sXqfhYILohi9eGmM1e4DmJ7t4TguWOMx_-9Sbs_aK91JaLog/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbMpsG1cRAPD8XvfBIL4HkGaUQgQtmdzAcngoix8UdOyIzKVJmoiWgzr0vt-NZHDK7ZQ/exec";
 
     // Utility Modals
     function showMsg(title, text) {
